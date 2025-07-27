@@ -78,4 +78,65 @@ router.put('/complete-onboarding', async (req, res) => {
     }
 });
 
+// @route   POST api/users/submit-verification
+// @desc    Allows a supplier to submit their verification document URL
+// @access  Private
+router.post('/submit-verification', async (req, res) => {
+    const { clerkUserId, documentUrl } = req.body;
+
+    if (!clerkUserId || !documentUrl) {
+        return res.status(400).json({ message: 'User ID and document URL are required.' });
+    }
+
+    try {
+        const user = await User.findOneAndUpdate(
+            { clerkUserId: clerkUserId, role: 'supplier' },
+            { 
+                $set: { 
+                    gstDocumentUrl: documentUrl,
+                    verificationStatus: 'pending' // Set status to pending for admin review
+                } 
+            },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ message: 'Supplier not found.' });
+        }
+
+        res.json({ message: 'Verification document submitted successfully. It is now pending review.', user });
+
+    } catch (error) {
+        console.error('Error submitting verification:', error.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+
+// --- NEW ADMIN ROUTE TO VERIFY A SUPPLIER ---
+// @route   PUT api/users/verify-supplier/:clerkUserId
+// @desc    (Admin) Mark a supplier as verified
+// @access  Admin Only (should be protected by an admin check)
+router.put('/verify-supplier/:clerkUserId', async (req, res) => {
+    const { clerkUserId } = req.params;
+
+    try {
+        const user = await User.findOneAndUpdate(
+            { clerkUserId: clerkUserId, role: 'supplier' },
+            { $set: { verificationStatus: 'verified' } },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ message: 'Supplier not found.' });
+        }
+
+        res.json({ message: 'Supplier has been verified successfully.', user });
+
+    } catch (error) {
+        console.error('Error verifying supplier:', error.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;

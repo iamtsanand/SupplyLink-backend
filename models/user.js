@@ -6,7 +6,7 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        index: true, // Add an index for faster lookups
+        index: true,
     },
     firstName: {
         type: String,
@@ -39,13 +39,21 @@ const UserSchema = new mongoose.Schema({
     role: {
         type: String,
         required: true,
-        enum: ['vendor', 'supplier'], // Ensures the role is one of these two values
+        enum: ['vendor', 'supplier'],
     },
-    // --- NEW FIELD ---
-    // This flag will track if the user has completed the onboarding flow.
     hasCompletedOnboarding: {
         type: Boolean,
         default: false,
+    },
+    // --- NEW FIELDS FOR VERIFICATION ---
+    verificationStatus: {
+        type: String,
+        enum: ['unverified', 'pending', 'verified'],
+        default: 'unverified',
+    },
+    gstDocumentUrl: {
+        type: String, // Will store the URL to the uploaded document
+        default: '',
     },
     createdAt: {
         type: Date,
