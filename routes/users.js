@@ -4,7 +4,7 @@ const User = require('../models/user'); // Import the User model
 
 // @route   POST api/users
 // @desc    Create a new user in the database after Clerk sign-up
-// @access  Public (should be protected in a real app, e.g., with Clerk webhooks)
+// @access  Public
 router.post('/', async (req, res) => {
     const {
         clerkUserId,
@@ -19,15 +19,12 @@ router.post('/', async (req, res) => {
     } = req.body;
 
     try {
-        // Check if a user with this Clerk ID already exists
         let user = await User.findOne({ clerkUserId });
 
         if (user) {
-            // If user exists, you might want to update them or just return the existing user
             return res.status(400).json({ message: 'User already exists in the database.' });
         }
 
-        // If user doesn't exist, create a new one
         user = new User({
             clerkUserId,
             firstName,
@@ -38,12 +35,11 @@ router.post('/', async (req, res) => {
             state,
             pincode,
             role
+            // hasCompletedOnboarding will default to false
         });
 
-        // Save the new user to the database
         await user.save();
-
-        // Respond with the newly created user object
+        // Return the full user object, including the new flag
         res.status(201).json(user);
 
     } catch (error) {
