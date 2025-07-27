@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Bid = require('../models/bid'); // Import the Bid model
 const Requirement = require('../models/requirement'); // Import the Requirement model to validate it exists
+const PastDeal = require('../models/pastDeal');
 
 // @route   POST api/bids
 // @desc    Create a new bid for an aggregated item in a state
