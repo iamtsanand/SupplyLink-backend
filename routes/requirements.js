@@ -47,4 +47,49 @@ router.get('/state/:state', async (req, res) => {
 });
 
 
+// @route   PUT api/requirements/:id
+// @desc    Update a requirement
+// @access  Private (should be protected)
+router.put('/:id', async (req, res) => {
+    const { item, quantity, unit, price } = req.body;
+
+    try {
+        // In a real app, you'd also verify that the clerkUserId from the request
+        // matches the clerkUserId on the requirement to ensure ownership.
+        const updatedRequirement = await Requirement.findByIdAndUpdate(
+            req.params.id,
+            { item, quantity, unit, price },
+            { new: true } // This option returns the document after it has been updated
+        );
+
+        if (!updatedRequirement) {
+            return res.status(404).json({ message: 'Requirement not found.' });
+        }
+
+        res.json(updatedRequirement);
+    } catch (error) {
+        console.error('Error updating requirement:', error.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   DELETE api/requirements/:id
+// @desc    Delete a requirement
+// @access  Private (should be protected)
+router.delete('/:id', async (req, res) => {
+    try {
+        // Again, you would verify ownership here in a real app.
+        const deletedRequirement = await Requirement.findByIdAndDelete(req.params.id);
+
+        if (!deletedRequirement) {
+            return res.status(404).json({ message: 'Requirement not found.' });
+        }
+
+        res.json({ message: 'Requirement deleted successfully.' });
+    } catch (error) {
+        console.error('Error deleting requirement:', error.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;
