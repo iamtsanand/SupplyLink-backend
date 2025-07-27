@@ -54,6 +54,83 @@ router.post('/', async (req, res) => {
     }
 });
 
+// --- SECURED ENDPOINT TO CLOSE THE BIDDING WINDOW ---
+router.post('/close-window', async (req, res) => {
+    // 1. Check for the secret key in the request query
+    const { secret } = req.query;
+    if (secret !== process.env.CRON_SECRET) {
+        return res.status(401).json({ message: 'Unauthorized: Invalid secret.' });
+    }
+
+    try {
+        // 2. Find all open requirements
+        const openRequirements = await Requirement.find({ status: 'open' });
+        if (openRequirements.length === 0) {
+            return res.status(200).json({ message: 'No open requirements to process.' });
+        }
+
+        // 3. Group requirements by item and state
+        const aggregatedDemands = {};
+        openRequirements.forEach(req => {
+            const key = `${req.item}-${req.state}`;
+            if (!aggregatedDemands[key]) {
+                aggregatedDemands[key] = {
+                    item: req.item,
+                    state: req.state,
+                    totalQuantity: 0,
+                    unit: req.unit,
+                    vendorIds: new Set(),
+                    requirementIds: [],
+                };
+            }
+            aggregatedDemands[key].totalQuantity += req.quantity;
+            aggregatedDemands[key].vendorIds.add(req.clerkUserId);
+            aggregatedDemands[key].requirementIds.push(req._id);
+        });
+
+        const dealsMade = [];
+        // 4. For each aggregated demand, find the winning bid
+        for (const key in aggregatedDemands) {
+            const demand = aggregatedDemands[key];
+            
+            const winningBid = await Bid.findOne({ item: demand.item, state: demand.state }).sort({ price: 1 });
+
+            if (winningBid) {
+                // 5. If a winner is found, create a "PastDeal" document
+                const newDeal = new PastDeal({
+                    item: demand.item,
+                    state: demand.state,
+                    winningSupplierId: winningBid.clerkUserId,
+                    winningSupplierName: winningBid.supplierName,
+                    winningPrice: winningBid.price,
+                    totalQuantity: demand.totalQuantity,
+                    unit: demand.unit,
+                    vendorIds: Array.from(demand.vendorIds),
+                    fulfilledRequirementIds: demand.requirementIds,
+                });
+                await newDeal.save();
+                dealsMade.push(newDeal);
+
+                // 6. Update the status of all fulfilled requirements to "closed"
+                await Requirement.updateMany(
+                    { _id: { $in: demand.requirementIds } },
+                    { $set: { status: 'closed' } }
+                );
+            }
+        }
+
+        // 7. After processing, clear all bids for the next session
+        await Bid.deleteMany({});
+
+        res.status(200).json({ message: 'Bidding window closed successfully.', dealsMade });
+
+    } catch (error) {
+        console.error('Error closing bidding window:', error.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+
 // @route   GET api/bids/state/:state
 // @desc    Get all bids for a specific state
 // @access  Public

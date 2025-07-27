@@ -11,5 +11,15 @@
       "src": "/api/(.*)",
       "dest": "index.js"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/bids/close-window?secret=${CRON_SECRET}",
+      "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/bids/close-window?secret=${CRON_SECRET}",
+      "schedule": "30 15 * * *"
+    }
   ]
 }

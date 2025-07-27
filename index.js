@@ -33,6 +33,7 @@ connectDB();
 app.use('/api/users', require('./routes/users')); // User management routes
 app.use('/api/bids', require('./routes/bids')); // Bid submission & retrieval routes
 app.use('/api/requirements', require('./routes/requirements')); // Requirement handling routes
+app.use('/api/deals', require('./routes/deals'));// Past Deals handling routes
 
 // --- Start the Server ---
 // const PORT = process.env.PORT || 5000;
