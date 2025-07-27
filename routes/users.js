@@ -52,4 +52,34 @@ router.post('/', async (req, res) => {
     }
 });
 
+// --- NEW ROUTE ---
+// @route   PUT api/users/complete-onboarding
+// @desc    Mark a user's onboarding as complete
+// @access  Private (should be protected)
+router.put('/complete-onboarding', async (req, res) => {
+    const { clerkUserId } = req.body;
+
+    if (!clerkUserId) {
+        return res.status(400).json({ message: 'Clerk User ID is required.' });
+    }
+
+    try {
+        const user = await User.findOneAndUpdate(
+            { clerkUserId: clerkUserId },
+            { $set: { hasCompletedOnboarding: true } },
+            { new: true } // Return the updated document
+        );
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        res.json({ message: 'Onboarding completed successfully.', user });
+
+    } catch (error) {
+        console.error('Error completing onboarding:', error.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;

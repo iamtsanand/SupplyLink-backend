@@ -41,6 +41,12 @@ const UserSchema = new mongoose.Schema({
         required: true,
         enum: ['vendor', 'supplier'], // Ensures the role is one of these two values
     },
+    // --- NEW FIELD ---
+    // This flag will track if the user has completed the onboarding flow.
+    hasCompletedOnboarding: {
+        type: Boolean,
+        default: false,
+    },
     createdAt: {
         type: Date,
         default: Date.now,
