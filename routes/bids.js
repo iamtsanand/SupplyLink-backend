@@ -14,34 +14,42 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        // --- Validation Logic ---
-
-        // 1. Check if this supplier has already bid on this item in this state.
+        // Check if this supplier has an existing bid for this item/state
         const existingBid = await Bid.findOne({ item, state, clerkUserId });
+
         if (existingBid) {
-            return res.status(409).json({ message: 'You have already placed a bid for this item.' });
+            // --- UPDATE LOGIC ---
+            if (price >= existingBid.price) {
+                return res.status(400).json({ message: `Your new bid must be lower than your previous bid of ₹${existingBid.price}.` });
+            }
+            // Update the existing bid with the new, lower price
+            existingBid.price = price;
+            const updatedBid = await existingBid.save();
+            return res.status(200).json(updatedBid); // Return 200 OK for an update
+
+        } else {
+            // --- CREATE LOGIC ---
+            // Check if the new bid is lower than the overall current lowest bid.
+            const lowestBid = await Bid.findOne({ item, state }).sort({ price: 1 });
+            if (lowestBid && price >= lowestBid.price) {
+                return res.status(400).json({ message: `Your bid must be lower than the current lowest bid of ₹${lowestBid.price}.` });
+            }
+
+            // Create a new bid instance
+            const newBid = new Bid({
+                item,
+                state,
+                clerkUserId,
+                supplierName,
+                price,
+            });
+
+            const savedBid = await newBid.save();
+            res.status(201).json(savedBid); // Return 201 Created for a new resource
         }
-
-        // 2. Check if the new bid is lower than the current lowest bid.
-        const lowestBid = await Bid.findOne({ item, state }).sort({ price: 1 });
-        if (lowestBid && price >= lowestBid.price) {
-            return res.status(400).json({ message: `Your bid must be lower than the current lowest bid of ₹${lowestBid.price}.` });
-        }
-
-        // --- Create New Bid ---
-        const newBid = new Bid({
-            item,
-            state,
-            clerkUserId,
-            supplierName,
-            price,
-        });
-
-        const savedBid = await newBid.save();
-        res.status(201).json(savedBid);
 
     } catch (error) {
-        console.error('Error creating bid:', error.message);
+        console.error('Error creating/updating bid:', error.message);
         res.status(500).send('Server Error');
     }
 });
