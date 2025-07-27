@@ -4,9 +4,6 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 require('dotenv').config(); // Load environment variables from .env file
 
-// --- Import Mock Data ---
-const { mockRequirements, mockBids } = require('./data/mockData');
-
 // --- Initialize Express App ---
 const app = express();
 
@@ -36,14 +33,6 @@ connectDB();
 app.use('/api/users', require('./routes/users')); // User management routes
 app.use('/api/bids', require('./routes/bids')); // Bid submission & retrieval routes
 app.use('/api/requirements', require('./routes/requirements')); // Requirement handling routes
-
-// --- Mock Data Route (For Testing/Frontend Prototyping) ---
-app.get('/api/mockData', (req, res) => {
-  res.status(200).json({
-    mockRequirements,
-    mockBids,
-  });
-});
 
 // --- Start the Server ---
 const PORT = process.env.PORT || 5000;
