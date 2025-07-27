@@ -47,6 +47,21 @@ router.get('/state/:state', async (req, res) => {
 });
 
 
+// --- NEWLY ADDED ROUTE ---
+// @route   GET api/requirements/vendor/:clerkUserId
+// @desc    Get all requirements for a specific vendor
+// @access  Private (should be protected)
+router.get('/vendor/:clerkUserId', async (req, res) => {
+    try {
+        const requirements = await Requirement.find({ clerkUserId: req.params.clerkUserId }).sort({ createdAt: -1 });
+        res.json(requirements);
+    } catch (error) {
+        console.error('Error fetching vendor requirements:', error.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+
 // @route   PUT api/requirements/:id
 // @desc    Update a requirement
 // @access  Private (should be protected)
@@ -54,8 +69,6 @@ router.put('/:id', async (req, res) => {
     const { item, quantity, unit, price } = req.body;
 
     try {
-        // In a real app, you'd also verify that the clerkUserId from the request
-        // matches the clerkUserId on the requirement to ensure ownership.
         const updatedRequirement = await Requirement.findByIdAndUpdate(
             req.params.id,
             { item, quantity, unit, price },
@@ -78,7 +91,6 @@ router.put('/:id', async (req, res) => {
 // @access  Private (should be protected)
 router.delete('/:id', async (req, res) => {
     try {
-        // Again, you would verify ownership here in a real app.
         const deletedRequirement = await Requirement.findByIdAndDelete(req.params.id);
 
         if (!deletedRequirement) {
@@ -91,5 +103,6 @@ router.delete('/:id', async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
+
 
 module.exports = router;
